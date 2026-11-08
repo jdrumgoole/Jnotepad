@@ -9,18 +9,33 @@ A note-taking web app for keeping track of notes, links and images.
 - **Auth:** username + password through [regstack](https://github.com/jdrumgoole/regstack):
   Argon2 hashing, JWT with revocation on logout and on password change, and per-account
   lockout after repeated failures.
-- **Storage:** [SecantusDB](https://github.com/jdrumgoole/SecantusDB), a MongoDB wire-protocol
-  server on WiredTiger, embedded in-process by default. The app talks to it with plain
-  `pymongo`.
+- **Storage:** [SecantusDB](https://github.com/jdrumgoole/SecantusDB)'s Rust server
+  (`secantusd-rs`), a MongoDB wire-protocol server on WiredTiger. The app starts it as a child
+  process on a loopback ephemeral port and stops it cleanly on exit. The app talks to it with
+  plain `pymongo`.
 
 ## Run it
+
+You need the `secantusd-rs` binary. It's a Rust crate, not a Python package. It needs
+rustc 1.98 or newer:
+
+```bash
+rustup update stable
+cargo install secantus-mdb --version 0.5.3-beta.196 --locked   # installs ~/.cargo/bin/secantusd-rs
+```
+
+Then:
 
 ```bash
 uv venv && uv pip install -e ".[dev]"
 .venv/bin/jnotepad                 # http://127.0.0.1:8000
 ```
 
-Data goes to `./data/`: `data/secantus/` holds the database files, and `data/jwt_secret` is
+The app looks for `secantusd-rs` on `$PATH`, then in `~/.cargo/bin`. If it can't find it, it
+refuses to start and prints the install command. It does not silently fall back to the
+slower Python server.
+
+Data goes to `./data/`: `data/secantus/` holds the WiredTiger files, and `data/jwt_secret` is
 generated on first run with mode 0600. Back up that directory.
 
 ### Configuration (environment variables)
@@ -28,31 +43,37 @@ generated on first run with mode 0600. Back up that directory.
 | Variable | Default | Meaning |
 |---|---|---|
 | `JNOTEPAD_DATA_DIR` | `./data` | Database store and generated JWT secret |
-| `JNOTEPAD_MONGODB_URL` | unset | Use an external MongoDB-wire server instead of the embedded one |
+| `JNOTEPAD_ENGINE` | `rust` | `rust` (managed `secantusd-rs`) or `python` (in-process reference server, `pip install -e ".[python-server]"`) |
+| `JNOTEPAD_SECANTUSD_BIN` | auto | Path to `secantusd-rs` |
+| `JNOTEPAD_SECANTUS_CACHE_SIZE` | `256M` | WiredTiger cache (the server's own default is 4G) |
+| `JNOTEPAD_MONGODB_URL` | unset | Connect to a server you run yourself; nothing is started |
 | `JNOTEPAD_DATABASE` | `jnotepad` | Database name |
 | `JNOTEPAD_JWT_SECRET` | generated | Set explicitly if you don't want it on disk |
 | `JNOTEPAD_JWT_TTL_SECONDS` | 604800 | Login lifetime (7 days) |
 | `JNOTEPAD_ALLOW_REGISTRATION` | `true` | Turn off after creating your account(s) |
 | `JNOTEPAD_MAX_IMAGE_BYTES` | 8 MiB | Per-image limit (images are stored inline, so this stays < 16 MiB) |
 
-### Using the Rust SecantusDB server instead
+### How the database server is managed
 
-The embedded server is SecantusDB's pure-Python reference implementation, which is fine for a
-personal notebook. For the faster Rust server:
-
-```bash
-cargo install secantus-mdb --version <current beta>
-secantusd-rs --port 27017 --storage-path ./data/secantus-rs
-JNOTEPAD_MONGODB_URL=mongodb://127.0.0.1:27017 .venv/bin/jnotepad
-```
-
-Python and Rust servers use the same on-disk format, but only one process can hold a
-directory at a time (WiredTiger takes an exclusive lock).
+- The app starts `secantusd-rs --host 127.0.0.1 --port 0 ...`, reads the real port from its
+  `listening on` line, and passes that URI to regstack and to the app's own client.
+- On shutdown it sends SIGTERM, which makes the server checkpoint and close WiredTiger. If the
+  server hasn't exited after 30s, it is killed.
+- On Linux, the child is bound to the app with `PR_SET_PDEATHSIG`. If the app is SIGKILLed,
+  the server still gets SIGTERM and doesn't hang around holding the data-dir lock. Tested: no
+  orphan, and the data was intact on restart.
+- The Python and Rust servers share the on-disk format. A store written by the Python server
+  opened in the Rust one with users, items and images intact, so `JNOTEPAD_ENGINE` can be
+  switched on an existing data dir. Only one server can hold a directory at a time (WiredTiger
+  takes an exclusive lock). A second instance fails to start with a clear error.
+- Want to run the server yourself, e.g. under systemd? Start `secantusd-rs` and set
+  `JNOTEPAD_MONGODB_URL`.
 
 ## Tests
 
 ```bash
-.venv/bin/pytest        # runs against a real embedded SecantusDB in a temp dir
+.venv/bin/pytest                          # real secantusd-rs per run, temp data dir
+JNOTEPAD_ENGINE=python .venv/bin/pytest   # same suite on the Python server
 .venv/bin/ruff check .
 ```
 
@@ -79,5 +100,7 @@ directory at a time (WiredTiger takes an exclusive lock).
 - **Bind address is 127.0.0.1.** There is no TLS. Put it behind a reverse proxy with HTTPS if
   you expose it beyond localhost. There is also no per-IP rate limiting (regstack supports it
   via `slowapi` if needed).
-- SecantusDB is beta software (pinned to `0.7.0b3`), and regstack is pinned to `0.9.3`
+- SecantusDB is beta software. The app is tested against `secantusd-rs 0.5.3-beta.196` and
+  logs a warning if it finds a different version. It can't pin the binary the way pip pins a
+  package, so it is up to you which version is installed. regstack is pinned to `0.9.3`
   because the integration relies on its route and response shapes.

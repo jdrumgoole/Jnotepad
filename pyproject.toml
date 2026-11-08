@@ -10,8 +10,6 @@ dependencies = [
     "fastapi>=0.120",
     "uvicorn[standard]>=0.29",
     "regstack[mongo]==0.9.3",
-    # SecantusDB only ships pre-releases; pin so an upgrade is deliberate.
-    "secantusdb==0.7.0b3",
     "pymongo>=4.13",
     "httpx>=0.27",
     "pydantic-settings>=2.4",
@@ -19,6 +17,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Default storage is the Rust `secantusd-rs` binary (cargo install secantus-mdb),
+# which isn't a Python package. This extra is only for JNOTEPAD_ENGINE=python.
+# SecantusDB only ships pre-releases; pinned so an upgrade is deliberate.
+python-server = ["secantusdb==0.7.0b3"]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.4"]
 
 [project.scripts]

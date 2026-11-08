@@ -6,6 +6,7 @@ import os
 import secrets
 from functools import cached_property
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -21,11 +22,26 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="JNOTEPAD_", extra="ignore")
 
     data_dir: Path = Path("./data")
-    """Holds the embedded SecantusDB store and the generated JWT secret."""
+    """Holds the SecantusDB store and the generated JWT secret."""
+
+    engine: Literal["rust", "python"] = "rust"
+    """Which SecantusDB server the app starts and manages. ``rust`` runs the
+    ``secantusd-rs`` binary as a child process; ``python`` runs the reference
+    server in-process (needs the ``python-server`` extra). Both use the same
+    on-disk format, so you can switch between them on the same data dir."""
+
+    secantusd_bin: str | None = None
+    """Path to ``secantusd-rs``. Default: ``$PATH``, then ``~/.cargo/bin``."""
+
+    secantus_cache_size: str = "256M"
+    """WiredTiger cache for ``secantusd-rs`` (its own default, 4G, is sized for a
+    database server, not a notebook)."""
+
+    secantus_startup_timeout: float = 30.0
 
     mongodb_url: str | None = None
-    """Connect to an already-running MongoDB-wire server (e.g. ``secantusd-rs``)
-    instead of starting the embedded Python SecantusDB server."""
+    """Connect to an already-running MongoDB-wire server instead of starting one.
+    Overrides ``engine``."""
 
     database: str = "jnotepad"
 
