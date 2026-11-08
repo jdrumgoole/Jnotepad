@@ -218,3 +218,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Jnotepad local data (SecantusDB store, generated JWT secret)
+/data/

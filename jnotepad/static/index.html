@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jnotepad</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Jnotepad</h1>
+    <div id="userbox" hidden>
+      <span id="whoami"></span>
+      <button id="btn-password" class="link">Change password</button>
+      <button id="btn-logout" class="link">Log out</button>
+    </div>
+  </header>
+
+  <!-- Login / register -->
+  <main id="auth-view" class="auth" hidden>
+    <form id="auth-form" class="card" autocomplete="on">
+      <h2 id="auth-title">Log in</h2>
+      <label>Username
+        <input name="username" autocomplete="username" required minlength="3" maxlength="32"
+               pattern="[A-Za-z0-9][A-Za-z0-9_.\-]{2,31}" autofocus>
+      </label>
+      <label>Password
+        <input name="password" type="password" autocomplete="current-password" required
+               minlength="8" maxlength="128">
+      </label>
+      <p id="auth-error" class="error" role="alert"></p>
+      <button type="submit" id="auth-submit">Log in</button>
+      <p class="muted"><button type="button" id="auth-toggle" class="link">
+        No account? Register</button></p>
+    </form>
+  </main>
+
+  <!-- Main app -->
+  <main id="app-view" hidden>
+    <section id="capture" class="card capture">
+      <input id="cap-title" placeholder="Title (optional)" maxlength="300">
+      <textarea id="cap-text" rows="3"
+        placeholder="Type a note, paste a link, or paste / drop an image…  (Ctrl+Enter to save)"></textarea>
+      <div class="row">
+        <input id="cap-url" type="url" placeholder="https://… (optional)" maxlength="2048">
+        <input id="cap-tags" placeholder="tags, comma separated">
+      </div>
+      <div id="cap-previews" class="previews"></div>
+      <div class="row actions">
+        <label class="filebtn">Add image
+          <input id="cap-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple>
+        </label>
+        <span id="cap-status" class="muted" role="status"></span>
+        <button id="cap-save">Save</button>
+      </div>
+    </section>
+
+    <section class="filters row">
+      <input id="f-q" type="search" placeholder="Search…" maxlength="200">
+      <select id="f-kind">
+        <option value="">Everything</option>
+        <option value="note">Notes</option>
+        <option value="link">Links</option>
+        <option value="image">Images</option>
+      </select>
+      <select id="f-tag"><option value="">All tags</option></select>
+    </section>
+
+    <p id="list-summary" class="muted"></p>
+    <section id="items" class="items"></section>
+    <button id="more" hidden>Load more</button>
+  </main>
+
+  <template id="item-tpl">
+    <article class="card item">
+      <header class="item-head">
+        <span class="badge"></span>
+        <h3 class="item-title"></h3>
+        <time class="muted"></time>
+      </header>
+      <a class="item-url" target="_blank" rel="noopener noreferrer nofollow"></a>
+      <p class="item-text"></p>
+      <div class="item-images previews"></div>
+      <div class="item-tags"></div>
+      <footer class="item-actions">
+        <button class="link act-edit">Edit</button>
+        <label class="link filebtn">Add image<input class="act-addimg" type="file"
+          accept="image/png,image/jpeg,image/gif,image/webp" multiple></label>
+        <button class="link danger act-delete">Delete</button>
+      </footer>
+    </article>
+  </template>
+
+  <dialog id="edit-dialog">
+    <form method="dialog" id="edit-form" class="stack">
+      <h2>Edit</h2>
+      <input name="title" placeholder="Title" maxlength="300">
+      <textarea name="text" rows="8" maxlength="200000"></textarea>
+      <input name="url" type="url" placeholder="https://…" maxlength="2048">
+      <input name="tags" placeholder="tags, comma separated">
+      <div class="item-images previews" id="edit-images"></div>
+      <p class="error" id="edit-error" role="alert"></p>
+      <div class="row actions">
+        <button value="cancel" formnovalidate class="link">Cancel</button>
+        <button value="save" id="edit-save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="pw-dialog">
+    <form method="dialog" id="pw-form" class="stack">
+      <h2>Change password</h2>
+      <input name="current_password" type="password" autocomplete="current-password"
+             placeholder="Current password" required>
+      <input name="new_password" type="password" autocomplete="new-password"
+             placeholder="New password (8+ characters)" minlength="8" maxlength="128" required>
+      <p class="error" id="pw-error" role="alert"></p>
+      <div class="row actions">
+        <button value="cancel" formnovalidate class="link">Cancel</button>
+        <button value="save">Change</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="lightbox"><img alt=""><form method="dialog"><button>Close</button></form></dialog>
+</body>
+</html>

@@ -1,0 +1,102 @@
+:root {
+  --bg: #f6f5f2; --surface: #ffffff; --text: #1d1d1f; --muted: #6b6b70;
+  --border: #dedcd6; --accent: #2f6fdf; --accent-text: #fff; --danger: #c0392b;
+  --note: #6b6b70; --link: #2f6fdf; --image: #8a4fd1;
+  --radius: 10px;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161618; --surface: #222225; --text: #ececee; --muted: #9a9aa2;
+    --border: #36363b; --accent: #5b8ff0; --danger: #e5675a;
+    --note: #9a9aa2; --link: #7aa5f5; --image: #b48af0;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+[hidden] { display: none !important; }
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--surface);
+}
+.topbar h1 { font-size: 18px; margin: 0; }
+#userbox { display: flex; gap: 12px; align-items: center; }
+main { max-width: 860px; margin: 0 auto; padding: 16px; }
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px;
+}
+.auth { display: grid; place-items: center; min-height: 70vh; }
+.auth form { width: min(360px, 100%); display: grid; gap: 12px; }
+.auth h2 { margin: 0; }
+label { display: grid; gap: 4px; font-size: 14px; }
+input, textarea, select, button { font: inherit; color: inherit; }
+input, textarea, select {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--bg);
+}
+textarea { resize: vertical; }
+button {
+  padding: 8px 14px; border-radius: 8px; border: 1px solid var(--accent);
+  background: var(--accent); color: var(--accent-text); cursor: pointer;
+}
+button:disabled { opacity: .6; cursor: default; }
+button.link, .filebtn.link {
+  background: none; border: none; color: var(--accent); padding: 0; cursor: pointer;
+}
+.danger { color: var(--danger) !important; }
+.filebtn { display: inline-flex; cursor: pointer; color: var(--accent); }
+.filebtn input { display: none; }
+.muted { color: var(--muted); font-size: 13px; }
+.error { color: var(--danger); min-height: 1em; margin: 0; font-size: 14px; }
+.row { display: flex; gap: 8px; align-items: center; }
+.row > input, .row > select { flex: 1; min-width: 0; }
+.actions { justify-content: flex-end; }
+.actions > :first-child { margin-right: auto; }
+.stack { display: grid; gap: 10px; }
+.capture { display: grid; gap: 8px; margin-bottom: 16px; }
+.capture.drop { outline: 2px dashed var(--accent); outline-offset: 2px; }
+.filters { margin-bottom: 8px; }
+.items { display: grid; gap: 12px; }
+.item { display: grid; gap: 6px; }
+.item-head { display: flex; gap: 8px; align-items: baseline; }
+.item-title { margin: 0; font-size: 16px; flex: 1; overflow-wrap: anywhere; }
+.item-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.item-url { overflow-wrap: anywhere; color: var(--link); }
+.badge {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
+  border: 1px solid currentColor; border-radius: 999px; padding: 0 7px;
+}
+.k-note { color: var(--note); } .k-link { color: var(--link); } .k-image { color: var(--image); }
+.item-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  background: none; color: var(--muted); border: 1px solid var(--border);
+  padding: 0 8px; border-radius: 999px; font-size: 13px;
+}
+.item-actions { display: flex; gap: 16px; font-size: 14px; }
+.previews { display: flex; flex-wrap: wrap; gap: 8px; }
+.previews:empty { display: none; }
+.thumb { position: relative; }
+.thumb img {
+  display: block; height: 120px; max-width: 220px; object-fit: cover;
+  border-radius: 8px; border: 1px solid var(--border); cursor: zoom-in;
+}
+.thumb-x {
+  position: absolute; top: 4px; right: 4px; padding: 0 7px; line-height: 1.4;
+  background: rgba(0,0,0,.6); border: none; border-radius: 999px;
+}
+dialog {
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+  color: var(--text); width: min(640px, calc(100vw - 32px));
+}
+dialog h2 { margin: 0; }
+#lightbox { width: auto; max-width: 95vw; }
+#lightbox img { max-width: 90vw; max-height: 80vh; display: block; margin-bottom: 8px; }
+#more { display: block; margin: 16px auto; }
+@media (max-width: 600px) {
+  .row { flex-wrap: wrap; }
+  #userbox #whoami { display: none; }
+}
