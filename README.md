@@ -57,11 +57,21 @@ generated on first run with mode 0600. Back up that directory.
 
 - The app starts `secantusd-rs --host 127.0.0.1 --port 0 ...`, reads the real port from its
   `listening on` line, and passes that URI to regstack and to the app's own client.
-- On shutdown it sends SIGTERM, which makes the server checkpoint and close WiredTiger. If the
-  server hasn't exited after 30s, it is killed.
-- On Linux, the child is bound to the app with `PR_SET_PDEATHSIG`. If the app is SIGKILLed,
-  the server still gets SIGTERM and doesn't hang around holding the data-dir lock. Tested: no
-  orphan, and the data was intact on restart.
+- The server runs under a small supervisor (`jnotepad/_supervisor.py`) whose stdin is a pipe
+  from the app. The OS closes that pipe whenever the app ends, whether it exits cleanly,
+  crashes, is SIGKILLed, is ended in Task Manager or is hit by the OOM killer. The supervisor
+  then stops the server **gracefully**, so WiredTiger checkpoints and releases the data-dir
+  lock. The same mechanism runs on Linux, macOS and Windows.
+  - Graceful stop is SIGTERM on Linux/macOS, and `CTRL_BREAK_EVENT` on Windows (the server
+    runs in its own process group; `secantusd-rs` treats Ctrl+Break as a clean stop).
+  - If the server hasn't stopped after 30s, it is killed.
+  - Extra layer on Linux: `PR_SET_PDEATHSIG` on the server, so even SIGKILLing the
+    supervisor itself takes the server down.
+- Tested on Linux: SIGKILL of the app (the test fails if the pipe watch is disabled), SIGKILL
+  of the supervisor, and terminal Ctrl-C to the whole process group. Each one left no stray
+  processes and no force-kills, and the data was intact on restart. **Not run on macOS or
+  Windows:** macOS uses the identical POSIX path. The Windows Ctrl+Break path is written
+  against `secantusd-rs`'s signal handler but has never been executed.
 - The Python and Rust servers share the on-disk format. A store written by the Python server
   opened in the Rust one with users, items and images intact, so `JNOTEPAD_ENGINE` can be
   switched on an existing data dir. Only one server can hold a directory at a time (WiredTiger
